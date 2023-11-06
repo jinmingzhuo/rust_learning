@@ -27,6 +27,16 @@ fn main() {
         ele.draw();
     }
     println!("{}", get_static_str());
+    let mut a: [i32; 4] = [1, 2, 3, 4];
+    for ele in a.iter_mut() {
+        *ele = 999;
+        let h: *mut i32 = ele;
+        unsafe {
+            *h = 88;
+        }
+        println!("{:?}", h);
+    }
+    println!("{:?}", a);
 }
 fn get_static_str() -> &'static str {
     let mut s = String::new();
