@@ -1,52 +1,40 @@
-trait Draw {
-    fn draw(&mut self);
-}
-struct Button {
-    id: u32,
-}
-impl Draw for Button {
-    fn draw(&mut self) {
-        println!("this is the id of botton: {}", self.id);
-    }
-}
-struct Select {
-    id: u32,
-}
-impl Draw for Select {
-    fn draw(&mut self) {
-        println!("select id {}", self.id);
-    }
-}
-fn main() {
-    let b = Button { id: 11 };
-    let s = Select { id: 12 };
-    let bb = Box::new(b);
-    let bs = Box::new(s);
-    let v: Vec<Box<dyn Draw>> = vec![bb, bs];
-    for mut ele in v {
-        ele.draw();
-    }
-    println!("{}", get_static_str());
-    let mut a: [i32; 4] = [1, 2, 3, 4];
-    for ele in a.iter_mut() {
-        *ele = 999;
-        let h: *mut i32 = ele;
-        unsafe {
-            *h = 88;
-        }
-        println!("{:?}", h);
-    }
-    println!("{:?}", a);
-}
-fn get_static_str() -> &'static str {
-    let mut s = String::new();
-    s.push_str("aaa");
+use std::convert::TryFrom;
 
-    // let a = Box::leak(Box::new(s));
-    let a = Box::leak(s.into_boxed_str());
-    a
+enum MyEnum {
+    A = 1,
+    B,
+    C,
 }
-/* Make it work with const generics */
-fn my_function<const N: usize>() -> [u32; N] {
-    [123; N]
+
+impl TryFrom<i32> for MyEnum {
+    type Error = ();
+
+    fn try_from(v: i32) -> Result<Self, Self::Error> {
+        match v {
+            x if x == MyEnum::A as i32 => Ok(MyEnum::A),
+            x if x == MyEnum::B as i32 => Ok(MyEnum::B),
+            x if x == MyEnum::C as i32 => Ok(MyEnum::C),
+            _ => Err(()),
+        }
+    }
+}
+
+use std::convert::TryInto;
+
+fn main() {
+    let x = MyEnum::C as i32;
+
+    match x.try_into() {
+        Ok(MyEnum::A) => println!("a"),
+        Ok(MyEnum::B) => println!("b"),
+        Ok(MyEnum::C) => println!("c"),
+        Err(_) => eprintln!("unknown number"),
+    }
+
+    let a = 103;
+    match a {
+        x if x > 10 => println!(">10"),
+        x if x == 10 => println!("10"),
+        _ => println!("<10"),
+    }
 }
