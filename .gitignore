@@ -1,8 +1,6 @@
-# a15_27/**/target
-# chapter16/**/target
-# chapter17/**/target
-# a15_27/**/debug
-# chapter16/**/debug
-# chapter17/**/debug
 **/target
+**/debug
+**/*.rs.bk
+**/*.pdb
+.git
 
