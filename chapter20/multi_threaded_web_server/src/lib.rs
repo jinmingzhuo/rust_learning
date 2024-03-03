@@ -61,18 +61,19 @@ impl Drop for ThreadPool {
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Self {
         let thread = thread::spawn(move || loop {
-            let a = receiver
-                .lock()
-                .expect(format!("Worker {} error", id).as_str());
-            let recv = a.recv();
-            // match a.recv(){
+            // let a = receiver
+            //     .lock()
+            //     .expect(format!("Worker {} error", id).as_str());
+            // let recv = a.recv();
+            // drop(a);
+            let recv = receiver.lock().unwrap().recv();
             match recv {
                 Ok(b) => {
                     println!("Worker {id} got a job; executing.");
                     b();
                 }
                 Err(e) => {
-                    println!("Worker {} sender is closed", id);
+                    println!("Worker {} is disconnected; shutting down.", id);
                     break;
                 }
             }
