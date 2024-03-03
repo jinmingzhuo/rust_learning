@@ -11,11 +11,11 @@ use std::{
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: Option<mpsc::Sender<Job>>,
 }
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 // struct Job;
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -29,7 +29,10 @@ impl ThreadPool {
         for i in 0..size {
             workers.push(Worker::new(i, receiver.clone()));
         }
-        ThreadPool { workers, sender }
+        ThreadPool {
+            workers,
+            sender: Some(sender),
+        }
     }
 
     pub fn execute<F>(&self, f: F)
@@ -38,7 +41,21 @@ impl ThreadPool {
         F: Send + 'static,
     {
         let job = Box::new(f);
-        self.sender.send(job).unwrap();
+        // self.sender.send(job).unwrap();
+        if let Some(sender) = &self.sender {
+            sender.send(job).unwrap();
+        }
+    }
+}
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        drop(self.sender.take());
+        for ele in &mut self.workers {
+            println!("Shutting down worker {}", ele.id);
+            if let Some(a) = ele.thread.take() {
+                a.join().unwrap();
+            }
+        }
     }
 }
 impl Worker {
@@ -47,10 +64,22 @@ impl Worker {
             let a = receiver
                 .lock()
                 .expect(format!("Worker {} error", id).as_str());
-            let b = a.recv().unwrap();
-            println!("Worker {id} got a job; executing.");
-            b();
+            let recv = a.recv();
+            // match a.recv(){
+            match recv {
+                Ok(b) => {
+                    println!("Worker {id} got a job; executing.");
+                    b();
+                }
+                Err(e) => {
+                    println!("Worker {} sender is closed", id);
+                    break;
+                }
+            }
         });
-        Worker { id, thread }
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
